@@ -89,3 +89,14 @@ requirements.txt
 - **Automatic device selection** — uses CUDA when available, falls back to CPU.
 - **Headless CLI mode** — run on a video without opening a window.
 - **Safer frame seeking, type hints, and docstrings** throughout.
+
+## License
+
+This project is licensed under the **GNU Affero General Public License v3.0
+(AGPL-3.0)** — see [`LICENSE`](LICENSE).
+
+AGPL-3.0 was chosen to stay consistent with [Ultralytics YOLO](https://github.com/ultralytics/ultralytics),
+which this project depends on and is itself AGPL-3.0. If you distribute this
+program (including the packaged `.exe`) or run a modified version as a network
+service, you must make the corresponding source code available under the same
+license.

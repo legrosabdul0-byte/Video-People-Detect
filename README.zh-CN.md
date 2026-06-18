@@ -81,3 +81,13 @@ requirements.txt
 - **自动选择设备** —— 有 CUDA 时优先使用，否则回退到 CPU。
 - **无界面命令行模式** —— 无需打开窗口即可处理视频。
 - **更安全的抽帧定位、类型注解和文档字符串**。
+
+## 许可证 (License)
+
+本项目采用 **GNU Affero 通用公共许可证 v3.0(AGPL-3.0)**,详见
+[`LICENSE`](LICENSE)。
+
+选择 AGPL-3.0 是为了与本项目所依赖的
+[Ultralytics YOLO](https://github.com/ultralytics/ultralytics) 保持一致——
+它本身就是 AGPL-3.0。如果你分发本程序(包括打包好的 `.exe`),或以网络服务的
+形式运行修改后的版本,都必须以相同许可证公开对应的源代码。
