@@ -160,7 +160,13 @@ class PeopleDetector:
     def _predict(self, frames: Sequence[np.ndarray]):
         """Run YOLO on frames, batched in a single call when enabled."""
         images = list(frames)
-        common = dict(conf=self.config.conf, imgsz=self.config.imgsz, verbose=False)
+        common = dict(
+            conf=self.config.conf,
+            iou=self.config.iou,
+            max_det=self.config.max_det,
+            imgsz=self.config.imgsz,
+            verbose=False,
+        )
         if self._resolved_device:
             common["device"] = self._resolved_device
 

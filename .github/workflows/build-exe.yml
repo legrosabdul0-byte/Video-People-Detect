@@ -48,7 +48,8 @@ jobs:
           pip install pyinstaller
 
       - name: Download YOLO weights (bundled into the exe)
-        run: python -c "from ultralytics import YOLO; YOLO('yolov8s.pt')"
+        # yolov8s for single-video mode, yolov8m for high-recall batch mode.
+        run: python -c "from ultralytics import YOLO; YOLO('yolov8s.pt'); YOLO('yolov8m.pt')"
 
       - name: Build EXE
         run: >
@@ -59,6 +60,7 @@ jobs:
           --collect-all torchvision
           --collect-all cv2
           --add-data "yolov8s.pt;."
+          --add-data "yolov8m.pt;."
           main.py
 
       - name: Publish Release

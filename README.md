@@ -61,10 +61,13 @@ python main.py path/to/folder            # prints a table, one row per video
 python main.py path/to/folder --preview  # also save a preview next to each video
 ```
 
-Batch mode uses a **high-recall preset** (`DetectionConfig.high_recall()`):
-a lower confidence threshold, a smaller minimum box size, and more sampled
-frames, so it is biased toward *not missing people* and produces a more stable
-confidence score — at the cost of the occasional false positive.
+Batch mode uses a **high-recall preset** (`DetectionConfig.high_recall()`)
+tuned for crowded / overlapping scenes: a larger model (`yolov8m`), a higher
+NMS IoU threshold so heavily-overlapping people aren't merged into one, a lower
+confidence threshold, a smaller minimum box size, and more sampled frames. It
+is biased toward *not missing people* and gives a steadier confidence score —
+at the cost of the occasional false positive and slower processing (especially
+on CPU).
 
 Use the detector programmatically:
 

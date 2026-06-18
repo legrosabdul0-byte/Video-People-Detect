@@ -23,6 +23,12 @@ class DetectionConfig:
     conf: float = 0.20
     imgsz: int = 1280
     person_class_id: int = 0  # COCO class id for "person"
+    # NMS IoU threshold. A box is dropped when it overlaps a higher-scoring box
+    # by more than this. RAISING it keeps more heavily-overlapping people
+    # instead of merging them into one (key for crowded / occluded scenes).
+    iou: float = 0.70
+    # Max detections kept per frame (raise it for very crowded scenes).
+    max_det: int = 300
 
     # --- Frame sampling ---
     # Sample several frames across the middle of the clip so a single unlucky
@@ -62,16 +68,27 @@ class DetectionConfig:
         Intended for batch / folder scanning where the priority is "don't miss
         anyone", even at the cost of the occasional false positive:
 
+        - A larger model (``yolov8m``) handles occlusion / partial bodies much
+          better than the small model.
+        - A higher NMS ``iou`` (0.85) stops heavily-overlapping people from
+          being merged into a single detection — the main cause of
+          under-counting in crowded scenes.
         - Lower ``conf`` and smaller ``min_area_ratio`` catch farther away,
           smaller, or partially occluded people.
         - More ``sample_points`` make a single unlucky frame matter less, which
           also stabilises the estimate and tends to raise the reported
           confidence.
         - A higher ``final_percentile`` leans the aggregate against
-          under-counting.
+          under-counting, and ``max_det`` is raised for very crowded frames.
+
+        Trade-off: this is noticeably slower than the single-video default
+        (bigger model + more frames), especially on CPU-only machines.
         """
         return cls(
+            model_name="yolov8m.pt",
             conf=0.15,
+            iou=0.85,
+            max_det=1000,
             min_area_ratio=0.00005,
             sample_points=[round(0.20 + 0.04 * i, 2) for i in range(16)],  # 0.20..0.80
             final_percentile=80,
