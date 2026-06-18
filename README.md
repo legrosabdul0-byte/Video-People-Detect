@@ -4,6 +4,17 @@ Count the number of people in a video using a YOLOv8 detector. Designed for
 classroom-style scenes where occlusion is common, so the estimate is made
 robust by sampling several frames and aggregating the counts.
 
+## Download (Windows, no Python needed)
+
+Grab the latest `PeopleCounter-vX.Y.Z.exe` from the
+[**Releases**](https://github.com/legrosabdul0-byte/Video-People-Detect/releases/latest)
+page and double-click to run. Everything (Python, the libraries, and the YOLO
+weights) is bundled into the single `.exe`, so it works even on machines that
+have never had Python installed.
+
+> Every push to `main` automatically builds a fresh `.exe` via GitHub Actions
+> and publishes it to Releases, starting at **v1.0.0**.
+
 ## How it works
 
 1. Sample a spread of frames from the middle of the clip (configurable).
@@ -61,6 +72,7 @@ video_people_detect/
     config.py                 # DetectionConfig (all tunables)
     detector.py               # PeopleDetector (UI-independent logic)
     app.py                    # Tkinter GUI
+.github/workflows/build-exe.yml   # CI: build Windows exe + publish Release
 requirements.txt
 ```
 

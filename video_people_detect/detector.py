@@ -10,6 +10,7 @@ callbacks so the same code can drive a GUI, a CLI, or tests.
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Sequence, Tuple
 
@@ -69,6 +70,26 @@ class PeopleDetector:
         except Exception:
             return "cpu"
 
+    def _resolve_model_path(self) -> str:
+        """Locate the model weights.
+
+        When packaged as a PyInstaller one-file exe, bundled data is unpacked
+        into ``sys._MEIPASS``. We prefer the bundled weights so the app runs
+        fully offline; otherwise we fall back to the configured name and let
+        ultralytics find or download it.
+        """
+        name = self.config.model_name
+        if os.path.isabs(name) and os.path.exists(name):
+            return name
+
+        bundle_dir = getattr(sys, "_MEIPASS", None)
+        if bundle_dir:
+            bundled = os.path.join(bundle_dir, name)
+            if os.path.exists(bundled):
+                return bundled
+
+        return name
+
     def load_model(self, log: Optional[LogCallback] = None) -> None:
         """Load the YOLO model once and reuse it."""
         if self._model is not None:
@@ -78,9 +99,10 @@ class PeopleDetector:
         from ultralytics import YOLO
 
         self._resolved_device = self._resolve_device()
+        model_path = self._resolve_model_path()
         if log:
-            log(f"Loading model: {self.config.model_name} (device={self._resolved_device})")
-        self._model = YOLO(self.config.model_name)
+            log(f"Loading model: {model_path} (device={self._resolved_device})")
+        self._model = YOLO(model_path)
 
     # ------------------------------------------------------------------ #
     # Frame sampling

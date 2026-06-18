@@ -1,0 +1,75 @@
+name: Build and Release EXE
+
+# Builds a standalone Windows executable on every push to main and publishes
+# it to GitHub Releases. The exe bundles Python + all dependencies + the YOLO
+# weights, so end users can just download and double-click to run — no Python
+# or extra install required.
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - "README.md"
+      - ".gitignore"
+      - "LICENSE"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-exe
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compute version
+        id: ver
+        shell: bash
+        # First workflow run -> v1.0.0, then 1.0.1, 1.0.2, ...
+        run: echo "version=1.0.$(( ${{ github.run_number }} - 1 ))" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Download YOLO weights (bundled into the exe)
+        run: python -c "from ultralytics import YOLO; YOLO('yolov8s.pt')"
+
+      - name: Build EXE
+        run: >
+          pyinstaller --noconfirm --onefile --windowed
+          --name "PeopleCounter-v${{ steps.ver.outputs.version }}"
+          --collect-all ultralytics
+          --collect-all torch
+          --collect-all torchvision
+          --collect-all cv2
+          --add-data "yolov8s.pt;."
+          main.py
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.ver.outputs.version }}"
+          name: "People Counter v${{ steps.ver.outputs.version }}"
+          body: |
+            Standalone Windows build of People Counter.
+
+            Download `PeopleCounter-v${{ steps.ver.outputs.version }}.exe` below and
+            double-click to run. No Python installation required.
+          files: dist/PeopleCounter-v${{ steps.ver.outputs.version }}.exe
+          fail_on_unmatched_files: true
