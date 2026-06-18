@@ -9,7 +9,7 @@ on:
   push:
     branches: [ main ]
     paths-ignore:
-      - "README.md"
+      - "**/*.md"
       - ".gitignore"
       - "LICENSE"
   workflow_dispatch:

@@ -1,3 +1,5 @@
+<p align="right"><b>English</b> | <a href="README.zh-CN.md">中文</a></p>
+
 # Video People Detect
 
 Count the number of people in a video using a YOLOv8 detector. Designed for
