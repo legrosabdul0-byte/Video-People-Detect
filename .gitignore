@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# YOLO model weights (downloaded on first run)
+*.pt
+
+# Generated previews / outputs
+people_detection_preview.jpg
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
