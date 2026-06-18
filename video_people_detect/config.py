@@ -54,3 +54,25 @@ class DetectionConfig:
 
     # --- Output ---
     preview_filename: str = "people_detection_preview.jpg"
+
+    @classmethod
+    def high_recall(cls) -> "DetectionConfig":
+        """Preset tuned to avoid missing people (favours recall over precision).
+
+        Intended for batch / folder scanning where the priority is "don't miss
+        anyone", even at the cost of the occasional false positive:
+
+        - Lower ``conf`` and smaller ``min_area_ratio`` catch farther away,
+          smaller, or partially occluded people.
+        - More ``sample_points`` make a single unlucky frame matter less, which
+          also stabilises the estimate and tends to raise the reported
+          confidence.
+        - A higher ``final_percentile`` leans the aggregate against
+          under-counting.
+        """
+        return cls(
+            conf=0.15,
+            min_area_ratio=0.00005,
+            sample_points=[round(0.20 + 0.04 * i, 2) for i in range(16)],  # 0.20..0.80
+            final_percentile=80,
+        )

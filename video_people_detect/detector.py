@@ -205,6 +205,7 @@ class PeopleDetector:
         progress: Optional[ProgressCallback] = None,
         log: Optional[LogCallback] = None,
         save_preview: bool = True,
+        preview_path: Optional[str] = None,
     ) -> DetectionResult:
         """Detect and count people in ``video_path``.
 
@@ -212,8 +213,11 @@ class PeopleDetector:
             video_path: Path to the input video.
             progress: Optional callback receiving an int percentage (0-100).
             log: Optional callback receiving human-readable status strings.
-            save_preview: Whether to write an annotated preview image next to
-                the input video.
+            save_preview: Whether to write an annotated preview image.
+            preview_path: Optional explicit path for the preview image. When
+                omitted, it defaults to ``config.preview_filename`` next to the
+                input video (useful to give each video its own preview in batch
+                mode and avoid overwriting).
 
         Returns:
             A :class:`DetectionResult`.
@@ -245,9 +249,11 @@ class PeopleDetector:
 
         final_count, confidence, used_counts = self._aggregate(counts)
 
-        preview_path = ""
+        saved_preview = ""
         if save_preview and samples:
-            preview_path = self._save_preview(video_path, samples, final_count, log)
+            saved_preview = self._save_preview(
+                video_path, samples, final_count, log, preview_path
+            )
 
         return DetectionResult(
             final_count=final_count,
@@ -255,7 +261,7 @@ class PeopleDetector:
             raw_counts=counts,
             used_counts=used_counts,
             final_percentile=self.config.final_percentile,
-            preview_path=preview_path,
+            preview_path=saved_preview,
             samples=samples,
         )
 
@@ -265,14 +271,16 @@ class PeopleDetector:
         samples: Sequence[FrameSample],
         final_count: int,
         log: Optional[LogCallback],
+        preview_path: Optional[str] = None,
     ) -> str:
         """Write the annotated frame whose count is closest to ``final_count``."""
         best = min(samples, key=lambda s: abs(s.count - final_count))
         if best.annotated is None:
             return ""
 
-        base_dir = os.path.dirname(os.path.abspath(video_path))
-        preview_path = os.path.join(base_dir, self.config.preview_filename)
+        if preview_path is None:
+            base_dir = os.path.dirname(os.path.abspath(video_path))
+            preview_path = os.path.join(base_dir, self.config.preview_filename)
         cv2.imwrite(preview_path, best.annotated)
         if log:
             log(f"Preview frame: {best.percent}%, {best.count} people")

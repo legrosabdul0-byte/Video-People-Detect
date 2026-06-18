@@ -45,6 +45,21 @@ python main.py path/to/video.mp4
 python main.py path/to/video.mp4 --no-preview
 ```
 
+### 批量模式（扫描整个文件夹）
+
+把路径指向一个**文件夹**，它会（递归地）扫描里面的每一个视频，并给出每个文件
+的大致人数。在图形界面里点 **Select Folder (Batch)** 即可看到结果表格
+（视频 / 人数 / 置信度 / 状态）。
+
+```bash
+python main.py path/to/folder            # 打印表格，每个视频一行
+python main.py path/to/folder --preview  # 同时在每个视频旁保存预览图
+```
+
+批量模式使用**高召回预设**（`DetectionConfig.high_recall()`）：更低的置信度阈值、
+更小的最小框面积、更多的抽帧数量。它的取向是**尽量不漏人**,并让置信度更稳定——
+代价是偶尔会有误检。
+
 以代码方式调用检测器：
 
 ```python
@@ -68,7 +83,8 @@ main.py                       # 图形界面 + 命令行 入口
 video_people_detect/
     config.py                 # DetectionConfig（所有可调参数）
     detector.py               # PeopleDetector（与界面无关的核心逻辑）
-    app.py                    # Tkinter 图形界面
+    batch.py                  # scan_folder（批量 / 多视频扫描）
+    app.py                    # Tkinter 图形界面（单视频 + 文件夹模式）
 .github/workflows/build-exe.yml   # CI：构建 Windows exe 并发布 Release
 requirements.txt
 ```

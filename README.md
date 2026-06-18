@@ -50,6 +50,22 @@ python main.py path/to/video.mp4
 python main.py path/to/video.mp4 --no-preview
 ```
 
+### Batch mode (scan a whole folder)
+
+Point it at a **folder** and it scans every video inside (recursively) and
+reports an approximate head count per file. In the GUI, use **Select Folder
+(Batch)** to get a results table (Video / People / Confidence / Status).
+
+```bash
+python main.py path/to/folder            # prints a table, one row per video
+python main.py path/to/folder --preview  # also save a preview next to each video
+```
+
+Batch mode uses a **high-recall preset** (`DetectionConfig.high_recall()`):
+a lower confidence threshold, a smaller minimum box size, and more sampled
+frames, so it is biased toward *not missing people* and produces a more stable
+confidence score — at the cost of the occasional false positive.
+
 Use the detector programmatically:
 
 ```python
@@ -73,7 +89,8 @@ main.py                       # GUI + CLI entry point
 video_people_detect/
     config.py                 # DetectionConfig (all tunables)
     detector.py               # PeopleDetector (UI-independent logic)
-    app.py                    # Tkinter GUI
+    batch.py                  # scan_folder (batch / multi-video scanning)
+    app.py                    # Tkinter GUI (single + folder modes)
 .github/workflows/build-exe.yml   # CI: build Windows exe + publish Release
 requirements.txt
 ```
