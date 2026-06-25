@@ -42,6 +42,9 @@ class DetectionResult:
     used_counts: List[int]
     final_percentile: int
     preview_path: str = ""
+    # Annotated preview frame kept in memory (BGR numpy array). No file is
+    # written unless ``preview_path`` is set / requested.
+    preview_image: Optional[np.ndarray] = None
     samples: List[FrameSample] = field(default_factory=list)
 
 
@@ -210,8 +213,9 @@ class PeopleDetector:
         video_path: str,
         progress: Optional[ProgressCallback] = None,
         log: Optional[LogCallback] = None,
-        save_preview: bool = True,
+        save_preview: bool = False,
         preview_path: Optional[str] = None,
+        keep_preview: bool = True,
     ) -> DetectionResult:
         """Detect and count people in ``video_path``.
 
@@ -219,11 +223,13 @@ class PeopleDetector:
             video_path: Path to the input video.
             progress: Optional callback receiving an int percentage (0-100).
             log: Optional callback receiving human-readable status strings.
-            save_preview: Whether to write an annotated preview image.
-            preview_path: Optional explicit path for the preview image. When
-                omitted, it defaults to ``config.preview_filename`` next to the
-                input video (useful to give each video its own preview in batch
-                mode and avoid overwriting).
+            save_preview: Whether to also write the preview image to disk.
+            preview_path: Optional explicit path for the preview image (used
+                with ``save_preview``). Defaults to ``config.preview_filename``
+                next to the input video.
+            keep_preview: Keep the annotated preview frame in memory on the
+                result (``preview_image``) so the GUI can show it without
+                touching disk. Set to ``False`` in batch scans to save memory.
 
         Returns:
             A :class:`DetectionResult`.
@@ -247,7 +253,7 @@ class PeopleDetector:
         for i, ((percent, _frame), result) in enumerate(zip(frames, results)):
             count = self._count_in_result(result, min_area)
             counts.append(count)
-            samples.append(FrameSample(percent=percent, count=count, annotated=result.plot()))
+            samples.append(FrameSample(percent=percent, count=count))
             if log:
                 log(f"{percent}% : {count} people")
             if progress:
@@ -255,11 +261,22 @@ class PeopleDetector:
 
         final_count, confidence, used_counts = self._aggregate(counts)
 
+        # Render the annotated frame whose count is closest to the final
+        # estimate, only when actually needed (memory- and CPU-friendly).
+        preview_image = None
         saved_preview = ""
-        if save_preview and samples:
-            saved_preview = self._save_preview(
-                video_path, samples, final_count, log, preview_path
-            )
+        if samples and (keep_preview or save_preview):
+            best_i = min(range(len(samples)), key=lambda i: abs(samples[i].count - final_count))
+            annotated = results[best_i].plot()  # BGR numpy array, kept in RAM
+            if keep_preview:
+                preview_image = annotated
+            if save_preview:
+                saved_preview = self._write_preview(video_path, annotated, preview_path)
+                if log:
+                    log(
+                        f"Preview frame: {samples[best_i].percent}%, "
+                        f"{samples[best_i].count} people -> {saved_preview}"
+                    )
 
         return DetectionResult(
             final_count=final_count,
@@ -268,26 +285,16 @@ class PeopleDetector:
             used_counts=used_counts,
             final_percentile=self.config.final_percentile,
             preview_path=saved_preview,
+            preview_image=preview_image,
             samples=samples,
         )
 
-    def _save_preview(
-        self,
-        video_path: str,
-        samples: Sequence[FrameSample],
-        final_count: int,
-        log: Optional[LogCallback],
-        preview_path: Optional[str] = None,
+    def _write_preview(
+        self, video_path: str, annotated: np.ndarray, preview_path: Optional[str]
     ) -> str:
-        """Write the annotated frame whose count is closest to ``final_count``."""
-        best = min(samples, key=lambda s: abs(s.count - final_count))
-        if best.annotated is None:
-            return ""
-
+        """Write an already-rendered annotated frame to disk and return its path."""
         if preview_path is None:
             base_dir = os.path.dirname(os.path.abspath(video_path))
             preview_path = os.path.join(base_dir, self.config.preview_filename)
-        cv2.imwrite(preview_path, best.annotated)
-        if log:
-            log(f"Preview frame: {best.percent}%, {best.count} people")
+        cv2.imwrite(preview_path, annotated)
         return preview_path

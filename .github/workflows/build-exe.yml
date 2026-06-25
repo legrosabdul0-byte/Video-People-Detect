@@ -59,6 +59,7 @@ jobs:
           --collect-all torch
           --collect-all torchvision
           --collect-all cv2
+          --collect-all PIL
           --add-data "yolov8s.pt;."
           --add-data "yolov8m.pt;."
           main.py

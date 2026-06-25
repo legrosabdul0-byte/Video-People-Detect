@@ -105,6 +105,7 @@ def scan_folder(
                 log=log,
                 save_preview=save_preview,
                 preview_path=preview_path,
+                keep_preview=False,  # table-only; don't hold frames in RAM
             )
         except Exception as exc:  # noqa: BLE001 - record and continue with the rest
             item.error = str(exc)

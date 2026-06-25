@@ -17,6 +17,27 @@ have never had Python installed.
 > Every push to `main` automatically builds a fresh `.exe` via GitHub Actions
 > and publishes it to Releases, starting at **v1.0.0**.
 
+## GPU (NVIDIA CUDA)
+
+The pre-built `.exe` ships with a **CPU-only** PyTorch, so it does not use a
+GPU (bundling CUDA would make the download multiple GB). If you have an NVIDIA
+GPU and want to use it, run from source instead:
+
+- **Windows, one click:** double-click [`run_gpu.bat`](run_gpu.bat). The first
+  run creates a local `.venv` and installs a CUDA build of PyTorch (one-time,
+  large); later runs start instantly and use the GPU.
+- **Manual:**
+
+  ```bash
+  pip install --index-url https://download.pytorch.org/whl/cu121 torch torchvision
+  pip install -r requirements.txt
+  python main.py
+  ```
+
+The detector auto-detects CUDA (`torch.cuda.is_available()`) and runs on the
+GPU when present, otherwise falls back to CPU. You can also pin a device via
+`DetectionConfig(device="cuda:0")`.
+
 ## How it works
 
 1. Sample a spread of frames from the middle of the clip (configurable).
@@ -108,6 +129,8 @@ requirements.txt
   `predict` call for better throughput, especially on GPU.
 - **Automatic device selection** — uses CUDA when available, falls back to CPU.
 - **Headless CLI mode** — run on a video without opening a window.
+- **In-memory preview** — the annotated preview is kept in RAM and shown in a
+  popup window; no image file is written to disk by the GUI.
 - **Safer frame seeking, type hints, and docstrings** throughout.
 
 ## License

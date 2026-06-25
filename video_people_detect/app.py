@@ -50,6 +50,8 @@ class PeopleCounterApp:
         self.ui_queue: "queue.Queue[tuple]" = queue.Queue()
         self.running = False
         self.last_preview_path = ""
+        self.last_preview_image = None  # in-memory annotated frame (BGR numpy)
+        self._preview_photo = None  # keep a reference so Tk doesn't GC the image
         self._row_ids: list[str] = []
 
         self._build_ui()
@@ -166,16 +168,37 @@ class PeopleCounterApp:
         threading.Thread(target=self._run_batch, args=(folder,), daemon=True).start()
 
     def open_preview(self) -> None:
-        if not self.last_preview_path or not os.path.exists(self.last_preview_path):
-            messagebox.showwarning("No Preview", "No preview image found.")
+        """Show the last annotated preview frame from memory (no disk file)."""
+        if self.last_preview_image is None:
+            messagebox.showwarning("No Preview", "No preview available yet.")
             return
-        open_in_default_viewer(self.last_preview_path)
+        try:
+            self._show_image_window(self.last_preview_image)
+        except Exception as exc:  # noqa: BLE001
+            messagebox.showerror("Preview Error", f"Could not display preview:\n{exc}")
+
+    def _show_image_window(self, bgr_image) -> None:
+        """Render a BGR numpy frame in a popup window using Pillow (in-memory)."""
+        import cv2
+        from PIL import Image, ImageTk
+
+        rgb = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
+        img = Image.fromarray(rgb)
+        img.thumbnail((1100, 720))  # fit on screen, keep aspect ratio
+
+        win = tk.Toplevel(self.root)
+        win.title("Preview")
+        photo = ImageTk.PhotoImage(img)
+        self._preview_photo = photo  # prevent garbage collection
+        tk.Label(win, image=photo).pack()
 
     def _reset_views(self) -> None:
         self.text.delete("1.0", tk.END)
         self.progress["value"] = 0
         self.result_label.config(text="")
         self.preview_btn.config(state=tk.DISABLED)
+        self.last_preview_image = None
+        self._preview_photo = None
         for row in self.tree.get_children():
             self.tree.delete(row)
         self._row_ids = []
@@ -259,7 +282,7 @@ class PeopleCounterApp:
     # Single-video rendering
     # ------------------------------------------------------------------ #
     def _show_single_result(self, result: DetectionResult) -> None:
-        self.last_preview_path = result.preview_path
+        self.last_preview_image = result.preview_image
 
         self.text.insert(tk.END, "-" * 40 + "\n")
         self.text.insert(tk.END, f"Raw Counts: {result.raw_counts}\n")
@@ -267,8 +290,8 @@ class PeopleCounterApp:
         self.text.insert(tk.END, f"Final Percentile: {result.final_percentile}%\n")
         self.text.insert(tk.END, f"Final Count: {result.final_count}\n")
         self.text.insert(tk.END, f"Confidence: {result.confidence}%\n")
-        if result.preview_path:
-            self.text.insert(tk.END, f"Preview saved: {result.preview_path}\n")
+        if result.preview_image is not None:
+            self.text.insert(tk.END, "Preview ready (click 'Open Preview').\n")
             self.preview_btn.config(state=tk.NORMAL)
         self.text.see(tk.END)
 

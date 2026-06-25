@@ -24,6 +24,7 @@ def run_single(video_path: str, no_preview: bool) -> int:
             progress=None,
             log=lambda m: print(m),
             save_preview=not no_preview,
+            keep_preview=False,
         )
     except Exception as exc:  # noqa: BLE001 - surface any failure to the user
         print(f"ERROR: {exc}", file=sys.stderr)
